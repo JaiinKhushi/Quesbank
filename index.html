@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interview Question Bank</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--ink:#1c2233;--mute:#667089;--line:#e3e6ef;--acc:#4f46e5}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,sans-serif}
+.w{max-width:860px;margin:0 auto;padding:20px 16px 48px}h1{margin:8px 0 2px}.s{color:var(--mute);margin:0 0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+label{display:block;font-size:13px;color:var(--mute);margin:10px 0 4px}
+input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;font:inherit}
+textarea{min-height:130px}.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+button{padding:10px 16px;border-radius:10px;border:1px solid var(--acc);background:var(--acc);color:#fff;font:inherit;cursor:pointer;margin-top:12px}
+button.g{background:#fff;color:var(--acc)}.tabs button{margin:0 8px 14px 0;border-radius:999px}
+.chip{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:#eef0ff;color:var(--acc);margin:4px 6px 0 0}
+.q{padding:10px 0;border-top:1px solid var(--line);display:flex;gap:8px}.q>div{flex:1}.m{color:var(--mute);font-size:13px}
+.x{background:none;border:0;color:var(--mute);margin:0;padding:0 6px}
+</style></head><body><div class="w">
+<h1>Interview Question Bank</h1><p class="s">Share the questions you were asked in your interview. We clean them up and file them under the company. Thank you for helping other students!</p>
+<div class="tabs"><button id="t1">Add questions</button><button id="t2" class="g">Admin</button></div>
+<div id="add"><div class="card">
+<div class="row"><div><label>Your name</label><input id="sname"></div><div><label>Roll number</label><input id="roll"></div></div>
+<div class="row"><div><label>Company</label><input id="co"></div><div><label>Role</label><input id="role"></div>
+<div><label>Round</label><select id="round"><option>Online test</option><option>Technical</option><option>HR</option><option>Managerial</option><option>Group discussion</option><option>Other</option></select></div></div>
+<label>Questions as you remember them</label><textarea id="raw"></textarea>
+<button id="clean">Clean up questions</button><div class="m" id="m1"></div></div>
+<div class="card" id="prev" style="display:none"><b>Review before saving</b><div id="pl"></div><button id="save">Save</button></div></div>
+<div id="bank" style="display:none">
+<div class="card" id="login"><label>Admin ID</label><input id="aid" placeholder="Enter admin ID"><label>Password</label><input id="key" type="password" placeholder="Enter password">
+<button id="go">Log in</button><div class="m" id="lm"></div></div>
+<div id="panel" style="display:none"><div class="card"><input id="search" placeholder="Search company, topic, question, name or roll number">
+<button class="g" id="exp">Download all</button> <button class="g" id="out">Log out</button></div><div id="groups"></div></div></div>
+</div><script>
+const $=i=>document.getElementById(i);let pend=[];
+const esc=s=>{const d=document.createElement("div");d.textContent=s;return d.innerHTML};
+let KEY=sessionStorage.getItem("ak")||"",AID=sessionStorage.getItem("ai")||"";
+const H=()=>({"X-Admin-Id":AID,"X-Admin-Key":KEY});
+function tab(a){$("add").style.display=a?"":"none";$("bank").style.display=a?"none":"";
+$("t1").className=a?"":"g";$("t2").className=a?"g":"";if(!a){KEY?load():showLogin()}}
+function showLogin(){$("login").style.display="";$("panel").style.display="none"}
+$("t1").onclick=()=>tab(true);$("t2").onclick=()=>tab(false);
+$("go").onclick=()=>{AID=$("aid").value.trim();KEY=$("key").value;load()};
+$("out").onclick=()=>{KEY="";AID="";sessionStorage.clear();$("key").value="";$("aid").value="";showLogin()};
+$("clean").onclick=async()=>{const co=$("co").value,text=$("raw").value;
+if(!$("sname").value.trim()||!$("roll").value.trim()){$("m1").textContent="Enter your name and roll number first.";return}
+if(!co.trim()||!text.trim()){$("m1").textContent="Enter the company and questions.";return}
+$("m1").textContent="Cleaning up...";
+const r=await fetch("/api/clean",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({company:co,text})});
+const d=await r.json();pend=d.items;$("m1").textContent=d.ai?"":"Basic formatting used (AI key not set).";draw()};
+function draw(){$("prev").style.display=pend.length?"":"none";
+$("pl").innerHTML=pend.map((p,i)=>`<div class="q"><div><input data-i="${i}" value="${esc(p.q).replace(/"/g,"&quot;")}"><span class="chip">${esc(p.topic)}</span></div><button class="x" data-d="${i}">&times;</button></div>`).join("");
+$("pl").querySelectorAll("input").forEach(e=>e.oninput=()=>pend[+e.dataset.i].q=e.value);
+$("pl").querySelectorAll(".x").forEach(e=>e.onclick=()=>{pend.splice(+e.dataset.d,1);draw()})}
+$("save").onclick=async()=>{if(!$("sname").value.trim()||!$("roll").value.trim()){$("m1").textContent="Enter your name and roll number.";return}
+await fetch("/api/questions",{method:"POST",headers:{"Content-Type":"application/json"},
+body:JSON.stringify({student_name:$("sname").value,roll_no:$("roll").value,company:$("co").value,role:$("role").value,round:$("round").value,items:pend})});
+$("m1").textContent="Saved.";pend=[];$("raw").value="";draw()};
+async function load(){
+const r=await fetch("/api/questions?q="+encodeURIComponent($("search").value),{headers:H()});
+if(r.status===401){KEY="";AID="";sessionStorage.clear();showLogin();$("lm").textContent="Wrong ID or password.";return}
+sessionStorage.setItem("ak",KEY);sessionStorage.setItem("ai",AID);$("login").style.display="none";$("panel").style.display="";$("lm").textContent="";
+const g=await r.json();$("groups").innerHTML=g.length?g.map(x=>`<div class="card"><b style="font-size:18px">${esc(x.company)}</b> <span class="chip">${x.questions.length}</span>`+
+x.questions.map((q,i)=>`<div class="q"><div>${i+1}. ${esc(q.question)}<br><span class="chip">${esc(q.topic||"")}</span><span class="chip">${esc(q.round||"")}</span>${q.role?`<span class="chip">${esc(q.role)}</span>`:""}<br><span class="m">By ${esc(q.student_name||"")} (${esc(q.roll_no||"")})</span></div><button class="x" data-id="${q.id}" title="Delete">&times;</button></div>`).join("")+`</div>`).join(""):'<p class="m">No questions yet.</p>';
+document.querySelectorAll("#groups .x").forEach(b=>b.onclick=async()=>{if(!confirm("Delete this question?"))return;
+await fetch("/api/questions/"+b.dataset.id,{method:"DELETE",headers:H()});load()})}
+$("search").oninput=load;
+$("exp").onclick=async()=>{const r=await fetch("/api/export",{headers:H()});if(!r.ok)return;
+const u=URL.createObjectURL(await r.blob());const a=document.createElement("a");a.href=u;a.download="interview-questions.txt";a.click()};
+</script></body></html>
