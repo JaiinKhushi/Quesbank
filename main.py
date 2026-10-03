@@ -87,11 +87,21 @@ def basic_clean(text: str):
 
 
 def ai_clean(company: str, text: str):
-    prompt = (
+       prompt = (
         "You clean up interview questions written by students in messy language. "
         "Split the text into individual questions. Rewrite each in clear, correct English, "
         "expand abbreviations, fix typos, and keep the meaning. Do not add new content. "
-        "Give each a short topic label (OOPs, DBMS, DSA, OS, Networks, Projects, HR, Aptitude). "
+        "Then give each question ONE topic label that describes what it is really about. "
+        "Choose from: OOPs, DBMS, SQL, DSA, Algorithms, OS, Computer Networks, System Design, "
+        "API Design, Backend, Frontend, Cloud and DevOps, Machine Learning, Projects, Resume, "
+        "Behavioral, HR, Aptitude, Puzzle, Coding, Other. "
+        "Rules: Use Computer Networks only for protocols, HTTP, TCP, DNS and similar network topics. "
+        "Use Projects or Resume only when the question is about the candidate's own project or resume. "
+        "Use DSA or Algorithms only for real data structure or algorithm questions. "
+        "Designing or scaling a whole system, traffic, load or improvements to a design are System Design. "
+        "Designing endpoints or REST APIs is API Design. Tables, schemas, constraints and indexes are DBMS. "
+        "If a question is a follow up, use the topic of the scenario it belongs to. "
+        "If nothing fits well, use Other. Never force a label that does not match. "
         "Return ONLY a JSON array of objects with keys q and topic.\n\n"
         f"Company: {company}\n\nText:\n{text}"
     )
