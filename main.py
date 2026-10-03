@@ -119,8 +119,9 @@ def ai_clean(company: str, text: str):
     raw = re.sub(r"```json|```", "", raw).strip()
     data = json.loads(raw)
     return [{"q": d["q"], "topic": d.get("topic", "General")} for d in data if d.get("q")]
+    
 
-
+@app.post("/api/clean")
 def clean(body: CleanIn):
     if not body.company.strip() or not body.text.strip():
         raise HTTPException(400, "Company and questions are required")
